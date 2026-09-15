@@ -150,6 +150,7 @@ export interface ComponentPinsWouldAlignWithVerticalShift {
 export interface TraceCanBeSimplifiedByMovingComponent {
   lineItemType: "TraceCanBeSimplifiedByMovingComponent"
   schematicTraceId: string
+  traceName?: string
   targetComponent: SchematicBoxPlacement
   deltaSchX: number
   deltaSchY: number
@@ -157,6 +158,11 @@ export interface TraceCanBeSimplifiedByMovingComponent {
   newSchY: number
   currentTurnCount: number
   suggestedTurnCount: number
+  /** Collision-checked calculate-elbow routes after applying this move. */
+  suggestedTraces?: Array<{
+    schematicTraceId: string
+    points: Array<{ x: number; y: number }>
+  }>
   message: string
 }
 
@@ -175,6 +181,7 @@ export interface CrystalNotCenteredOverLoadCapacitors {
 export interface TwoPinComponentCouldBeFlipped {
   lineItemType: "TwoPinComponentCouldBeFlipped"
   schematicTraceId: string
+  traceName?: string
   targetComponent: SchematicBoxPlacement
   connectedComponent: SchematicBoxPlacement
   targetPin?: string
