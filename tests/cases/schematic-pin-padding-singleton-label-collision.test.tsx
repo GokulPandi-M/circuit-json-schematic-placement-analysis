@@ -3,14 +3,14 @@ import { Circuit } from "@tscircuit/core"
 import { analyzeSchematicPlacement } from "lib/index"
 import { createSchematicAnalysisFixtureSvg } from "../fixtures/create-schematic-analysis-fixture-svg"
 
-test("does not report corner padding for centered supply pins", async () => {
+test("still detects side label collisions with singleton supply pins", async () => {
   const circuit = new Circuit()
   circuit.add(
     <board routingDisabled>
       <chip
         name="U1"
         footprint="soic8"
-        schWidth={1.7}
+        schWidth={0.77}
         pinLabels={{
           pin1: "VDD",
           pin2: "SDA",
@@ -36,12 +36,33 @@ test("does not report corner padding for centered supply pins", async () => {
   const issuesLineItem = analysis
     .getLineItems()
     .find((lineItem) => lineItem.lineItemType === "SchematicPlacementIssues")
-  expect(issuesLineItem).toBeUndefined()
+  if (issuesLineItem?.lineItemType !== "SchematicPlacementIssues") {
+    throw new Error("Expected schematic placement issues")
+  }
+  const pinPaddingIssues = issuesLineItem.issues.filter(
+    (issue) => issue.lineItemType === "SchematicPinPaddingToEdgeTooLarge",
+  )
+
+  expect(pinPaddingIssues).toHaveLength(1)
+  expect(pinPaddingIssues[0]!.suggestedSchHeight).toBeCloseTo(1.17)
+  for (const issue of pinPaddingIssues) {
+    expect(issue.paddingDetails).toHaveLength(4)
+    for (const detail of issue.paddingDetails!) {
+      expect(["left", "right"]).toContain(detail.pinSide)
+    }
+  }
+  const collisionIssues = issuesLineItem.issues.filter(
+    (issue) => issue.lineItemType === "SchematicBoxInnerLabelCollision",
+  )
+  expect(collisionIssues).toHaveLength(1)
+  expect(collisionIssues[0]!.schematicBox.width).toBeCloseTo(0.77)
+  expect(collisionIssues[0]!.overlappingSides).toContain("left")
+  expect(collisionIssues[0]!.overlappingSides).toContain("right")
   expect(
     createSchematicAnalysisFixtureSvg({
       circuitJson,
       analysis,
-      highlightIssues: ["SchematicPinPaddingToEdgeTooLarge"],
+      highlightIssues: ["SchematicBoxInnerLabelCollision"],
     }),
   ).toMatchSvgSnapshot(import.meta.path)
 })
