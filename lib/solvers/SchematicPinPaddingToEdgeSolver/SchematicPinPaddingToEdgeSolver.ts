@@ -102,6 +102,9 @@ export class SchematicPinPaddingToEdgeSolver extends BaseSolver {
 
     const candidates: PinPaddingCandidate[] = []
     for (const [pinSide, sidePorts] of portsBySide) {
+      // A single pin does not form a bank with two ends to pad.
+      if (sidePorts.length === 1) continue
+
       for (const edgeSide of this.getBoxEdgeSidesForPinSide(pinSide)) {
         const outerPin = this.getOuterPinBySide(edgeSide, sidePorts)
         if (!outerPin) continue
