@@ -4,7 +4,7 @@ import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-con
 import { analyzeSchematicPlacement } from "lib/index"
 import { createSchematicAnalysisFixtureSvg } from "../fixtures/create-schematic-analysis-fixture-svg"
 
-test("reproduces a net label being mistaken for an unrelated led cathode", async () => {
+test("does not pair a net label with an unrelated led cathode", async () => {
   const circuit = new Circuit()
   circuit.add(
     <board routingDisabled>
@@ -47,13 +47,7 @@ test("reproduces a net label being mistaken for an unrelated led cathode", async
   const circuitJson = circuit.getCircuitJson()
   const analysis = analyzeSchematicPlacement(circuitJson)
   const issues = analysis.getIssues({ issueTypes: ["DiodeResistorNotAligned"] })
-  expect(issues).toHaveLength(1)
-  expect(issues[0]).toMatchObject({
-    diodeSchematicBox: { sourceComponentName: "LED1" },
-    diodePin: "cathode",
-    resistorSchematicBox: { sourceComponentName: "R5" },
-    resistorPin: "anode",
-  })
+  expect(issues).toHaveLength(0)
   const components = circuitJson.filter(
     (element) => element.type === "source_component",
   )

@@ -1,5 +1,6 @@
 import type { CircuitJson, SchematicTrace, SchematicPort } from "circuit-json"
 import { BaseSolver } from "@tscircuit/solver-utils"
+import { getSourcePortConnectivityMapFromCircuitJson } from "circuit-json-to-connectivity-map"
 import type { SolverContext } from "../SolverContext"
 import type {
   DiodeResistorNotAligned,
@@ -15,6 +16,9 @@ export class DiodeResistorAlignmentSolver extends BaseSolver {
   private readonly out: SchematicPlacementIssue[]
   private readonly schematicTraces: SchematicTrace[]
   private currentIndex = 0
+  private readonly sourceConnectivity: ReturnType<
+    typeof getSourcePortConnectivityMapFromCircuitJson
+  >
 
   private readonly sourceComponentFtypeById: Map<string, string>
   private readonly sourceComponentIdBySourcePortId: Map<string, string>
@@ -36,6 +40,8 @@ export class DiodeResistorAlignmentSolver extends BaseSolver {
     this.out = issues
 
     const { circuitJson } = ctx
+    this.sourceConnectivity =
+      getSourcePortConnectivityMapFromCircuitJson(circuitJson)
 
     this.sourceComponentFtypeById =
       this.buildSourceComponentFtypeById(circuitJson)
@@ -111,6 +117,13 @@ export class DiodeResistorAlignmentSolver extends BaseSolver {
     )
 
     if (!diodePort?.center || !resistorPort?.center) return
+    if (
+      !this.sourceConnectivity.areIdsConnected(
+        diodePort.source_port_id,
+        resistorPort.source_port_id,
+      )
+    )
+      return
 
     const diodeName = diodeBox.sourceComponentName ?? diodeCompId
     const resistorName = resistorBox.sourceComponentName ?? resistorCompId
