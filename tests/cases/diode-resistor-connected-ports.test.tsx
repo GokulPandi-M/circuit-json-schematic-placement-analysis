@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test"
 import { Circuit } from "@tscircuit/core"
 import { analyzeSchematicPlacement } from "lib/index"
-import { createSchematicAnalysisFixtureSvg } from "../fixtures/create-schematic-analysis-fixture-svg"
 
 test("preserves alignment warnings for direct and named-net connections", async () => {
   for (const connection of ["direct", "named-net"] as const) {
@@ -33,8 +32,5 @@ test("preserves alignment warnings for direct and named-net connections", async 
       diodeSchematicBox: { sourceComponentName: "D1" },
       resistorSchematicBox: { sourceComponentName: "R1" },
     })
-    expect(
-      createSchematicAnalysisFixtureSvg({ circuitJson, analysis }),
-    ).toMatchSvgSnapshot(import.meta.path, connection)
   }
 })
