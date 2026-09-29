@@ -1,3 +1,4 @@
+import { RelayFlybackDiodePlacementSolver } from "./solvers/RelayFlybackDiodePlacementSolver/RelayFlybackDiodePlacementSolver"
 import { CurrentSenseShuntPlacementSolver } from "./solvers/CurrentSenseShuntPlacementSolver/CurrentSenseShuntPlacementSolver"
 import { VoltageDividerPlacementSolver } from "./solvers/VoltageDividerPlacementSolver/VoltageDividerPlacementSolver"
 import { RegulatorInputOutputCapacitorPlacementSolver } from "./solvers/RegulatorInputOutputCapacitorPlacementSolver/RegulatorInputOutputCapacitorPlacementSolver"
@@ -76,6 +77,7 @@ export class SchematicPlacementAnalysis {
   /** Counts emitted issue objects, including zero counts for known types. */
   getIssueCounts(filter: { schematicSheetId?: string } = {}) {
     const counts = {
+      FlybackDiodeSeparatedFromRelayCoil: 0,
       ComponentOverlap: 0,
       SchematicBoxHasALotOfSurroundingWhitespace: 0,
       CapacitorSymbolHorizontal: 0,
@@ -173,6 +175,8 @@ export class SchematicPlacementAnalysis {
         return ConnectorPlacementSolver.issueToString(issue)
       case "LowSideTransistorNotAlignedWithLoad":
         return LowSideTransistorPlacementSolver.issueToString(issue)
+      case "FlybackDiodeSeparatedFromRelayCoil":
+        return RelayFlybackDiodePlacementSolver.issueToString(issue)
       case "VoltageDividerSupplyResistorBelowGroundResistor":
         return VoltageDividerPlacementSolver.issueToString(issue)
       case "RegulatorCapacitorsOnWrongSides":

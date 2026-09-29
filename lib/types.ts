@@ -425,6 +425,16 @@ export interface VoltageDividerSupplyResistorBelowGroundResistor {
   message: string
 }
 
+/** A local flyback diode separated from the relay coil it protects. */
+export interface FlybackDiodeSeparatedFromRelayCoil {
+  lineItemType: "FlybackDiodeSeparatedFromRelayCoil"
+  relaySchematicBox: SchematicBoxPlacement
+  diodeSchematicBox: SchematicBoxPlacement
+  coilSourcePortIds: [string, string]
+  distanceFromCoilPins: number
+  message: string
+}
+
 /** Advisory for a displaced local shunt with one sense branch split by labels. */
 export interface CurrentSenseShuntSeparatedFromInputs {
   lineItemType: "CurrentSenseShuntSeparatedFromInputs"
@@ -438,6 +448,7 @@ export interface CurrentSenseShuntSeparatedFromInputs {
 }
 
 export type SchematicPlacementIssue =
+  | FlybackDiodeSeparatedFromRelayCoil
   | CurrentSenseShuntSeparatedFromInputs
   | VoltageDividerSupplyResistorBelowGroundResistor
   | RegulatorCapacitorsOnWrongSides
