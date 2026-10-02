@@ -92,23 +92,47 @@ const circuitJson: CircuitJson = [
   }),
 ]
 
-test.failing("reports overlapping trace-generated labels beside a single chip", () => {
+test("reports overlapping trace-generated labels beside a single chip", async () => {
   const analysis = analyzeSchematicPlacement(circuitJson)
 
-  expect(
+  await expect(
     createSchematicAnalysisFixtureSvg({
       circuitJson,
       analysis,
       width: 900,
       height: 450,
+      highlightIssues: ["SchematicTextCollision"],
     }),
   ).toMatchSvgSnapshot(import.meta.path)
 
-  // The snapshot currently shows visible collisions above an empty analysis.
-  // This expected failure should become a normal regression test when handled.
+  const collisions = analysis
+    .getIssues()
+    .filter((issue) => issue.lineItemType === "SchematicTextCollision")
+  expect(collisions).toHaveLength(2)
   expect(
-    analysis
-      .getIssues()
-      .filter((issue) => issue.lineItemType === "SchematicTextCollision"),
-  ).toHaveLength(2)
+    collisions.map((issue) => [
+      issue.schematicTextId,
+      issue.collidingObject.id,
+    ]),
+  ).toEqual([
+    ["label_0_old", "label_0_new"],
+    ["label_1_old", "label_1_new"],
+  ])
+  for (const issue of collisions) {
+    // Moving generated text alone would be undone by the next trace render.
+    expect(issue.suggestedMove).toBeUndefined()
+    expect(issue.message).toContain("owning trace's label placement")
+  }
+
+  // A readable label beside its wire must not become a false positive.
+  const separated = circuitJson.map((element) =>
+    element.type === "schematic_text" &&
+    ["label_0_new", "label_1_new"].includes(element.schematic_text_id)
+      ? {
+          ...element,
+          position: { ...element.position, y: element.position.y + 0.4 },
+        }
+      : element,
+  )
+  expect(analyzeSchematicPlacement(separated).getIssues()).toHaveLength(0)
 })
