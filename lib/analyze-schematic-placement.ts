@@ -1,3 +1,4 @@
+import { RailPathVisibilitySolver } from "./solvers/RailPathVisibilitySolver/RailPathVisibilitySolver"
 import { ChipPinPairCapacitorPlacementSolver } from "./solvers/ChipPinPairCapacitorPlacementSolver/ChipPinPairCapacitorPlacementSolver"
 import { PiFilterPlacementSolver } from "./solvers/PiFilterPlacementSolver/PiFilterPlacementSolver"
 import { MosfetGateNetworkPlacementSolver } from "./solvers/MosfetGateNetworkPlacementSolver/MosfetGateNetworkPlacementSolver"
@@ -113,6 +114,7 @@ export class SchematicPlacementAnalysis {
       PiFilterComponentsNotGrouped: 0,
       MosfetGateNetworkNotGrouped: 0,
       CapacitorSeparatedFromChipPins: 0,
+      RailPathTooSpreadOut: 0,
     } satisfies Record<SchematicPlacementIssue["lineItemType"], number>
     for (const issue of this.getIssues(filter)) counts[issue.lineItemType]++
     return counts
@@ -175,6 +177,8 @@ export class SchematicPlacementAnalysis {
       case "TwoPinComponentShouldBeVertical":
       case "TwoPinComponentHasInvertedRails":
         return TwoPinComponentRailOrientationSolver.issueToString(issue)
+      case "RailPathTooSpreadOut":
+        return RailPathVisibilitySolver.issueToString(issue)
       case "PullResistorOnWrongSide":
         return PullResistorPlacementSolver.issueToString(issue)
       case "NetLabelCollision":
