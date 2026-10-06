@@ -25,11 +25,24 @@ test("reproduces missed staggered chip labels on opposing sides", async () => {
     const analysis = analyzeSchematicPlacement(circuitJson, {
       issueTypes: ["SchematicBoxInnerLabelCollision"],
     })
-    // Baseline bug: the renderer shows overlapping labels, but no warning.
-    expect(analysis.getIssues()).toHaveLength(0)
+    expect(analysis.getIssues()).toHaveLength(1)
+    expect(analysis.getIssues()[0]).toMatchObject({
+      lineItemType: "SchematicBoxInnerLabelCollision",
+      schematicBox: { sourceComponentName: "SW3" },
+      overlappingSides: vertical ? ["top", "bottom"] : ["left", "right"],
+      message: `Inner labels are colliding. Increase the ${vertical ? "schHeight" : "schWidth"}.`,
+    })
+    expect(
+      analyzeSchematicPlacement(circuitJson).getIssueCounts()
+        .SchematicBoxInnerLabelCollision,
+    ).toBe(1)
     expect(JSON.stringify(circuitJson)).toBe(originalJson)
     expect(
-      createSchematicAnalysisFixtureSvg({ circuitJson, analysis }),
+      createSchematicAnalysisFixtureSvg({
+        circuitJson,
+        analysis,
+        highlightIssues: ["SchematicBoxInnerLabelCollision"],
+      }),
     ).toMatchSvgSnapshot(
       import.meta.path,
       vertical ? "top-bottom" : "left-right",
