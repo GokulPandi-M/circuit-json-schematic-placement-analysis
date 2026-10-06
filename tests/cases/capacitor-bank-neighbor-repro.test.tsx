@@ -4,9 +4,9 @@ import { analyzeSchematicPlacement } from "lib/index"
 import { createIssueReproSnapshot } from "../fixtures/create-issue-repro-snapshot"
 import { expectReproNets } from "../fixtures/placement-repro-assertions"
 
-test("records capacitor bank warnings for tidy BLDC charger rows and separated clusters", async () => {
+test("retains warnings for loosely spaced BLDC charger rows and separated clusters", async () => {
   for (const [variant, rail, first, positions] of [
-    // Native BLDC charger banks: 1.2 and 1.1 units between adjacent symbol bodies.
+    // Preserve the reviewed placements: 1.2 and 1.1 units between adjacent bounds.
     ["pmid-row", "CHG_PMID", 23, [-3.15, -1.05, 1.05, 3.15]],
     ["sys-row", "CHG_SYS", 30, [-5, -3, -1, 1, 3, 5]],
     // Every capacitor has a nearby neighbor, but the bank has a large gap between pairs.
@@ -40,14 +40,23 @@ test("records capacitor bank warnings for tidy BLDC charger rows and separated c
     ])
     const issueTypes = ["DecouplingCapacitorsNotCloseTogether"] as const
     const analysis = analyzeSchematicPlacement(circuitJson, { issueTypes })
-    // Baseline uses the farthest pair, incorrectly warning on both tidy rows too.
     expect(analysis.getIssues()).toHaveLength(1)
+    expect(analysis.getIssues()[0]).toMatchObject({
+      maxRecommendedBodyGap: 1,
+      capacitorSchematicBoxes: names.map((sourceComponentName) => ({
+        sourceComponentName,
+      })),
+    })
+    if (variant === "separated-clusters")
+      expect(analysis.getIssues()[0]).toMatchObject({ maxBodyGap: 11.1 })
     expect(
       createIssueReproSnapshot({
         circuitJson,
         analysis,
         issueTypes,
         showFullSchematic: true,
+        showOverlay: true,
+        showListingIssueMarkers: true,
         width: 1200,
         height: 400,
       }),
