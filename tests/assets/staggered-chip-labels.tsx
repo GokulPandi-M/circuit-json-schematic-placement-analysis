@@ -4,7 +4,11 @@ import type { CircuitJson } from "circuit-json"
 /** Recreate the screenshot's two left pins and centered right pin using native
  * box rendering. Rotating the pin banks also exercises the height constraint. */
 export async function createStaggeredChipLabelsCircuitJson(
-  options: { vertical?: boolean; dimension?: number } = {},
+  options: {
+    vertical?: boolean
+    dimension?: number
+    labels?: { pin1: string; pin2: string; pin3: string }
+  } = {},
 ): Promise<CircuitJson> {
   const circuit = new Circuit()
   const vertical = options.vertical ?? false
@@ -17,8 +21,9 @@ export async function createStaggeredChipLabelsCircuitJson(
         footprint="sot23"
         schWidth={vertical ? 0.6 : dimension}
         schHeight={vertical ? dimension : 0.6}
-        schPinSpacing={0.2}
-        pinLabels={{ pin1: "THROW1", pin2: "COMMON", pin3: "THROW2" }}
+        pinLabels={
+          options.labels ?? { pin1: "THROW1", pin2: "COMMON", pin3: "THROW2" }
+        }
         schPinArrangement={
           vertical
             ? {
