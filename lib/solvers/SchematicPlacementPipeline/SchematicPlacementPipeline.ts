@@ -1,3 +1,11 @@
+import { DiodeCapacitorStagePlacementSolver } from "../DiodeCapacitorStagePlacementSolver/DiodeCapacitorStagePlacementSolver"
+import { SeriesLedChainPlacementSolver } from "../SeriesLedChainPlacementSolver/SeriesLedChainPlacementSolver"
+import { ParallelRcPlacementSolver } from "../ParallelRcPlacementSolver/ParallelRcPlacementSolver"
+import { ChipPinResistorPlacementSolver } from "../ChipPinResistorPlacementSolver/ChipPinResistorPlacementSolver"
+import { ParallelDiodeResistorPlacementSolver } from "../ParallelDiodeResistorPlacementSolver/ParallelDiodeResistorPlacementSolver"
+import { RailPathVisibilitySolver } from "../RailPathVisibilitySolver/RailPathVisibilitySolver"
+import { ChipPinPairCapacitorPlacementSolver } from "../ChipPinPairCapacitorPlacementSolver/ChipPinPairCapacitorPlacementSolver"
+import { PiFilterPlacementSolver } from "../PiFilterPlacementSolver/PiFilterPlacementSolver"
 import { MosfetGateNetworkPlacementSolver } from "../MosfetGateNetworkPlacementSolver/MosfetGateNetworkPlacementSolver"
 import { RelayFlybackDiodePlacementSolver } from "../RelayFlybackDiodePlacementSolver/RelayFlybackDiodePlacementSolver"
 import { CurrentSenseShuntPlacementSolver } from "../CurrentSenseShuntPlacementSolver/CurrentSenseShuntPlacementSolver"
@@ -25,6 +33,7 @@ import { CrystalLoadCapacitorPlacementSolver } from "../CrystalLoadCapacitorPlac
 import { DiodeResistorAlignmentSolver } from "../DiodeResistorAlignmentSolver/DiodeResistorAlignmentSolver"
 import { FeedbackNetworkPlacementSolver } from "../FeedbackNetworkPlacementSolver/FeedbackNetworkPlacementSolver"
 import { PullResistorPlacementSolver } from "../PullResistorPlacementSolver/PullResistorPlacementSolver"
+import { SwitchPullResistorPlacementSolver } from "../SwitchPullResistorPlacementSolver/SwitchPullResistorPlacementSolver"
 import { TwoPinComponentRailOrientationSolver } from "../TwoPinComponentRailOrientationSolver/TwoPinComponentRailOrientationSolver"
 import { SchematicBoxInnerLabelCollisionSolver } from "../SchematicBoxInnerLabelCollisionSolver/SchematicBoxInnerLabelCollisionSolver"
 import { SchematicBoxOverlapSolver } from "../SchematicBoxOverlapSolver/SchematicBoxOverlapSolver"
@@ -37,10 +46,21 @@ import { VerboseNetLabelSolver } from "../VerboseNetLabelSolver/VerboseNetLabelS
 import { SchematicTextClearanceSolver } from "../SchematicTextClearanceSolver/SchematicTextClearanceSolver"
 import { ResetNetworkGroupingSolver } from "../ResetNetworkGroupingSolver/ResetNetworkGroupingSolver"
 
-type SolverParams = { ctx: SolverContext; issues: SchematicPlacementIssue[] }
+type SolverParams = {
+  ctx: SolverContext
+  issues: SchematicPlacementIssue[]
+  maxSpan?: number
+  maxLength?: number
+}
 
 // Include prerequisites used when deduplicating findings in getOutput().
 const solversByIssueType = {
+  SeriesLedChainNotOrdered: [SeriesLedChainPlacementSolver],
+  RailPathTooSpreadOut: [RailPathVisibilitySolver],
+  ResistorSeparatedFromChipPin: [ChipPinResistorPlacementSolver],
+  CapacitorSeparatedFromChipPins: [ChipPinPairCapacitorPlacementSolver],
+  DiodeCapacitorJunctionTooSpreadOut: [DiodeCapacitorStagePlacementSolver],
+  PiFilterComponentsNotGrouped: [PiFilterPlacementSolver],
   MosfetGateNetworkNotGrouped: [MosfetGateNetworkPlacementSolver],
   FlybackDiodeSeparatedFromRelayCoil: [RelayFlybackDiodePlacementSolver],
   ComponentOverlap: [SchematicBoxOverlapSolver],
@@ -56,6 +76,8 @@ const solversByIssueType = {
   SchematicBoxInnerLabelCollision: [SchematicBoxInnerLabelCollisionSolver],
   SchematicPinPaddingToEdgeTooLarge: [SchematicPinPaddingToEdgeSolver],
   DiodeResistorNotAligned: [DiodeResistorAlignmentSolver],
+  ParallelRcNotAligned: [ParallelRcPlacementSolver],
+  ParallelDiodeResistorNotAligned: [ParallelDiodeResistorPlacementSolver],
   ComponentPinsWouldAlignWithVerticalShift: [ComponentPinAlignmentSolver],
   TraceCanBeSimplifiedByMovingComponent: [TraceSimplificationSolver],
   CrystalNotCenteredOverLoadCapacitors: [CrystalLoadCapacitorPlacementSolver],
@@ -63,7 +85,10 @@ const solversByIssueType = {
   ComponentBoxNetLabelCollision: [ComponentNetLabelCollisionSolver],
   NetLabelCollision: [ComponentNetLabelCollisionSolver],
   FeedbackNetworkNotCompact: [FeedbackNetworkPlacementSolver],
-  PullResistorOnWrongSide: [PullResistorPlacementSolver],
+  PullResistorOnWrongSide: [
+    PullResistorPlacementSolver,
+    SwitchPullResistorPlacementSolver,
+  ],
   SchematicTextCollision: [SchematicTextClearanceSolver],
   ResetNetworkNotGrouped: [ResetNetworkGroupingSolver],
   TwoPinComponentCouldBeFlipped: [TwoPinComponentOrientationSolver],
@@ -90,6 +115,27 @@ export class SchematicPlacementPipeline extends BasePipelineSolver<CircuitJson> 
   readonly issues: SchematicPlacementIssue[] = []
 
   pipelineDef: PipelineStep<any>[] = [
+    definePipelineStep(
+      "SeriesLedChainPlacementSolver",
+      SeriesLedChainPlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
+      "ParallelRcPlacementSolver",
+      ParallelRcPlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
+      "ParallelDiodeResistorPlacementSolver",
+      ParallelDiodeResistorPlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
     definePipelineStep(
       "SchematicTextClearanceSolver",
       SchematicTextClearanceSolver,
@@ -203,6 +249,13 @@ export class SchematicPlacementPipeline extends BasePipelineSolver<CircuitJson> 
       ],
     ),
     definePipelineStep(
+      "SwitchPullResistorPlacementSolver",
+      SwitchPullResistorPlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
       "ComponentNetLabelCollisionSolver",
       ComponentNetLabelCollisionSolver,
       (p: SchematicPlacementPipeline): [SolverParams] => [
@@ -266,10 +319,50 @@ export class SchematicPlacementPipeline extends BasePipelineSolver<CircuitJson> 
       ],
     ),
     definePipelineStep(
+      "DiodeCapacitorStagePlacementSolver",
+      DiodeCapacitorStagePlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
+      "PiFilterPlacementSolver",
+      PiFilterPlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
       "MosfetGateNetworkPlacementSolver",
       MosfetGateNetworkPlacementSolver,
       (p: SchematicPlacementPipeline): [SolverParams] => [
         { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
+      "ChipPinResistorPlacementSolver",
+      ChipPinResistorPlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
+      "ChipPinPairCapacitorPlacementSolver",
+      ChipPinPairCapacitorPlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
+      "RailPathVisibilitySolver",
+      RailPathVisibilitySolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        {
+          ctx: p.ctx,
+          issues: p.issues,
+          maxSpan: p.railPathVisibility?.maxSpan,
+          maxLength: p.railPathVisibility?.maxPathLength,
+        },
       ],
     ),
   ]
@@ -278,11 +371,14 @@ export class SchematicPlacementPipeline extends BasePipelineSolver<CircuitJson> 
     SchematicPlacementIssue["lineItemType"]
   >
 
+  private readonly railPathVisibility: SchematicPlacementAnalysisOptions["railPathVisibility"]
+
   constructor(
     circuitJson: CircuitJson,
     options: SchematicPlacementAnalysisOptions = {},
   ) {
     super(circuitJson)
+    this.railPathVisibility = options.railPathVisibility
     if (options.issueTypes !== undefined) {
       this.selectedIssueTypes = new Set(options.issueTypes)
       const selectedSolvers = new Set<PipelineStep<any>["solverClass"]>(

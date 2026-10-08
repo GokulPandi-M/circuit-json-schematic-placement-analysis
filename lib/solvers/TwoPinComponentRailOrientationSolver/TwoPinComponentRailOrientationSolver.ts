@@ -6,6 +6,7 @@ import type {
 } from "../../types"
 import { addAttr } from "../../utils/format"
 import { PlacementNetworkIndex } from "../../utils/placement-network-index"
+import { getHorizontalPushbuttonComponentIds } from "../../utils/switch-pull-resistor-pairs"
 import type { SolverContext } from "../SolverContext"
 
 /** Prefer vertical two-pin components with power above and ground below. */
@@ -16,6 +17,7 @@ export class TwoPinComponentRailOrientationSolver extends BaseSolver {
   private readonly groundNets: Set<string>
   private readonly positiveVoltageNets = new Set<string>()
   private readonly componentIds: string[]
+  private readonly horizontalPushbuttonComponentIds: Set<string>
   private readonly issues: SchematicPlacementIssue[]
   private currentIndex = 0
 
@@ -26,6 +28,9 @@ export class TwoPinComponentRailOrientationSolver extends BaseSolver {
     super()
     this.issues = issues
     this.index = new PlacementNetworkIndex(ctx)
+    this.horizontalPushbuttonComponentIds = getHorizontalPushbuttonComponentIds(
+      this.index,
+    )
     this.powerNets = new Set(this.index.powerNets)
     this.groundNets = new Set(this.index.groundNets)
     // Pin declarations also identify supply feeds even when the net has no power label.
@@ -109,11 +114,18 @@ export class TwoPinComponentRailOrientationSolver extends BaseSolver {
     const otherPort = index.port(otherSourcePort)
     if (!railPort || !otherPort) return
 
-    // Only unambiguous positive-supply-to-ground branches justify this flip.
-    // A single rail, an unknown supply polarity or a signal path is not enough.
+    const otherNet = index.connected(otherSourcePort.source_port_id)
+    const otherIsGround = this.groundNets.has(otherNet)
+    // A resistor from an explicitly positive supply to a non-rail signal also
+    // reads toward power above. Keep capacitors and other series paths restricted
+    // to positive-supply-to-ground, and never infer a rail from label text.
+    const isSupplyToSignalResistor =
+      sourceComponent?.ftype === "simple_resistor" &&
+      !this.powerNets.has(otherNet) &&
+      !otherIsGround
     const invertedRails =
       this.positiveVoltageNets.has(rail) &&
-      this.groundNets.has(index.connected(otherSourcePort.source_port_id)) &&
+      (otherIsGround || isSupplyToSignalResistor) &&
       Math.abs(railPort.center.x - otherPort.center.x) <=
         TwoPinComponentRailOrientationSolver.EPSILON &&
       railPort.center.y <
@@ -129,7 +141,7 @@ export class TwoPinComponentRailOrientationSolver extends BaseSolver {
         railType: "power",
         deltaSchRotation: 180,
         suggestedRailFacingDirection: "up",
-        message: `rotate ${component.sourceComponentName ?? id} by 180° so its positive-supply pin faces up and its ground pin faces down; preserve pin connections and reroute attached traces`,
+        message: `rotate ${component.sourceComponentName || "component"} by 180° so its positive-supply pin faces up and its ${otherIsGround ? "ground" : "signal"} pin faces down; preserve pin connections and reroute attached traces`,
       })
       return
     }
@@ -144,6 +156,7 @@ export class TwoPinComponentRailOrientationSolver extends BaseSolver {
         (railPort.facing_direction === "right" &&
           otherPort.facing_direction === "left"))
     if (!horizontal) return
+    if (this.horizontalPushbuttonComponentIds.has(id)) return
     const suggestedRailFacingDirection = railType === "power" ? "up" : "down"
     const deltaSchRotation =
       (railPort.facing_direction === "left") === (railType === "power")
@@ -157,7 +170,7 @@ export class TwoPinComponentRailOrientationSolver extends BaseSolver {
       railType,
       deltaSchRotation,
       suggestedRailFacingDirection,
-      message: `rotate ${component.sourceComponentName ?? id} by ${deltaSchRotation}° so its ${railType}-connected pin faces ${suggestedRailFacingDirection} and the component is vertical`,
+      message: `rotate ${component.sourceComponentName || "component"} by ${deltaSchRotation}° so its ${railType}-connected pin faces ${suggestedRailFacingDirection} and the component is vertical`,
     })
   }
 

@@ -62,7 +62,17 @@ test("records the real USB hub four-pin crystal load network", () => {
     newSchX: 0.66,
     newSchY: 2.5,
   })
-  expect(analysis.getIssues()).toEqual(crystalPlacementIssues)
+  expect(
+    analysis.getIssues({ issueTypes: ["SchematicBoxInnerLabelCollision"] }),
+  ).toMatchObject([
+    {
+      lineItemType: "SchematicBoxInnerLabelCollision",
+      schematicBox: { sourceComponentName: "U13" },
+      overlappingSides: ["left", "right"],
+      message: "Inner labels are colliding. Increase the schWidth.",
+    },
+  ])
+  expect(analysis.getIssues()).toHaveLength(2)
   expect(
     createIssueReproSnapshot({
       circuitJson,

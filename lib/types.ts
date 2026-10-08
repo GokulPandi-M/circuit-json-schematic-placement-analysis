@@ -56,7 +56,7 @@ export interface DecouplingCapacitorsNotCloseTogether {
   groundName: string
   /** All capacitors in this bank, sharing supply, return, and schematic scope. */
   capacitorSchematicBoxes: SchematicBoxPlacement[]
-  /** Largest gap between any two component bounds in the bank. */
+  /** Largest body gap required to connect the bank through neighboring capacitors. */
   maxBodyGap: number
   maxRecommendedBodyGap: number
   message: string
@@ -137,6 +137,25 @@ export interface DiodeResistorNotAligned {
   resistorPin?: string
   diodePinFacingDirection?: string
   resistorPinFacingDirection?: string
+  message: string
+}
+
+/** A unique grounded resistor/capacitor pair drawn with nonmatching branch ends. */
+export interface ParallelRcNotAligned {
+  lineItemType: "ParallelRcNotAligned"
+  resistorSchematicBox: SchematicBoxPlacement
+  capacitorSchematicBox: SchematicBoxPlacement
+  chipSourcePortId: string
+  reason: "different_axes" | "crossed_connections" | "staggered"
+  message: string
+}
+
+/** Readability advisory for a local diode/resistor pair across the same two nets. */
+export interface ParallelDiodeResistorNotAligned {
+  lineItemType: "ParallelDiodeResistorNotAligned"
+  diodeSchematicBox: SchematicBoxPlacement
+  resistorSchematicBox: SchematicBoxPlacement
+  reason: "different_axes" | "crossed_connections" | "staggered"
   message: string
 }
 
@@ -247,7 +266,7 @@ export interface TwoPinComponentShouldBeVertical
   deltaSchRotation: -90 | 90
 }
 
-/** A vertical component has an explicitly positive supply below its ground pin. */
+/** A vertical component has a positive supply below its ground pin or a resistor's signal pin. */
 export interface TwoPinComponentHasInvertedRails
   extends TwoPinComponentRailOrientation {
   lineItemType: "TwoPinComponentHasInvertedRails"
@@ -459,7 +478,91 @@ export interface CurrentSenseShuntSeparatedFromInputs {
   message: string
 }
 
+/** A chip-to-ground resistor placed far across its host chip from its connected pin. */
+export interface ResistorSeparatedFromChipPin {
+  lineItemType: "ResistorSeparatedFromChipPin"
+  hostSchematicBox: SchematicBoxPlacement
+  resistorSchematicBox: SchematicBoxPlacement
+  chipSourcePortId: string
+  resistorSourcePortId: string
+  pinDistance: number
+  maxRecommendedPinDistance: number
+  message: string
+}
+
+/** A capacitor placed far across its host chip from its two connected pins. */
+export interface CapacitorSeparatedFromChipPins {
+  lineItemType: "CapacitorSeparatedFromChipPins"
+  hostSchematicBox: SchematicBoxPlacement
+  capacitorSchematicBox: SchematicBoxPlacement
+  /** Connected chip pins, in the order of the capacitor's source ports. */
+  chipSourcePortIds: [string, string]
+  maxPinDistance: number
+  maxRecommendedPinDistance: number
+  message: string
+}
+
+/** The series element and grounded shunt branches of a signal pi filter are separated. */
+export interface PiFilterComponentsNotGrouped {
+  lineItemType: "PiFilterComponentsNotGrouped"
+  inductorSchematicBox: SchematicBoxPlacement
+  firstCapacitorSchematicBox: SchematicBoxPlacement
+  secondCapacitorSchematicBox: SchematicBoxPlacement
+  /** Longest direct distance between electrically connected inductor/capacitor pins. */
+  maxSignalPinDistance: number
+  maxRecommendedSignalPinDistance: number
+  message: string
+}
+
+/** Readability advisory for a physically continuous local path to an explicit rail. */
+export interface RailPathTooSpreadOut {
+  lineItemType: "RailPathTooSpreadOut"
+  hostSchematicBox: SchematicBoxPlacement
+  sourcePortId: string
+  /** Display name for user-facing diagnostics; identity remains sourcePortId. */
+  sourcePortName?: string
+  railType: "power" | "ground"
+  supportSchematicBoxes: SchematicBoxPlacement[]
+  schematicTraceIds: string[]
+  pathPoints: Array<{ x: number; y: number }>
+  pathBounds: SchematicIssueBounds
+  pathLength: number
+  pathSpan: number
+  maxRecommendedSpan: number
+  maxRecommendedPathLength: number
+  message: string
+}
+
+/** The three connected terminals of a diode-capacitor stage are spread apart. */
+export interface DiodeCapacitorJunctionTooSpreadOut {
+  lineItemType: "DiodeCapacitorJunctionTooSpreadOut"
+  capacitorSchematicBox: SchematicBoxPlacement
+  diodeSchematicBoxes: [SchematicBoxPlacement, SchematicBoxPlacement]
+  maxJunctionPinDistance: number
+  maxRecommendedJunctionPinDistance: number
+  message: string
+}
+
+/** A series LED chain with remote links that run behind their connected pins. */
+export interface SeriesLedChainNotOrdered {
+  lineItemType: "SeriesLedChainNotOrdered"
+  /** Traversal order through exclusive LED-to-LED junctions, not inferred polarity. */
+  ledSchematicBoxes: SchematicBoxPlacement[]
+  backtrackingConnections: Array<{
+    firstSourcePortId: string
+    secondSourcePortId: string
+    pinDistance: number
+  }>
+  message: string
+}
+
 export type SchematicPlacementIssue =
+  | DiodeCapacitorJunctionTooSpreadOut
+  | SeriesLedChainNotOrdered
+  | RailPathTooSpreadOut
+  | ResistorSeparatedFromChipPin
+  | CapacitorSeparatedFromChipPins
+  | PiFilterComponentsNotGrouped
   | MosfetGateNetworkNotGrouped
   | FlybackDiodeSeparatedFromRelayCoil
   | CurrentSenseShuntSeparatedFromInputs
@@ -476,6 +579,8 @@ export type SchematicPlacementIssue =
   | SchematicBoxInnerLabelCollision
   | SchematicPinPaddingToEdgeTooLarge
   | DiodeResistorNotAligned
+  | ParallelRcNotAligned
+  | ParallelDiodeResistorNotAligned
   | ComponentPinsWouldAlignWithVerticalShift
   | TraceCanBeSimplifiedByMovingComponent
   | CrystalNotCenteredOverLoadCapacitors
@@ -502,5 +607,7 @@ export type SchematicPlacementLineItem =
 
 /** Select issue types to execute; omitted runs all checks, [] runs none. */
 export interface SchematicPlacementAnalysisOptions {
+  /** Schematic drawing units, not PCB dimensions. Defaults: span 8, length 16. */
+  railPathVisibility?: { maxSpan?: number; maxPathLength?: number }
   issueTypes?: readonly SchematicPlacementIssue["lineItemType"][]
 }

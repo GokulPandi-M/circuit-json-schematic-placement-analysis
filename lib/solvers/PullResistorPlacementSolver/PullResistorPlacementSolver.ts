@@ -5,6 +5,7 @@ import type {
 } from "../../types"
 import { addAttr } from "../../utils/format"
 import { PlacementNetworkIndex } from "../../utils/placement-network-index"
+import { getHorizontalPushbuttonComponentIds } from "../../utils/switch-pull-resistor-pairs"
 import type { SolverContext } from "../SolverContext"
 
 export class PullResistorPlacementSolver extends BaseSolver {
@@ -12,6 +13,7 @@ export class PullResistorPlacementSolver extends BaseSolver {
   private static readonly MIN_WRONG_SIDE_GAP = 1.5
   private readonly index: PlacementNetworkIndex
   private readonly resistorIds: string[]
+  private readonly horizontalPushbuttonComponentIds: Set<string>
   private readonly issues: SchematicPlacementIssue[]
   private currentIndex = 0
 
@@ -22,6 +24,9 @@ export class PullResistorPlacementSolver extends BaseSolver {
     super()
     this.issues = issues
     this.index = new PlacementNetworkIndex(ctx)
+    this.horizontalPushbuttonComponentIds = getHorizontalPushbuttonComponentIds(
+      this.index,
+    )
     this.resistorIds = [...this.index.components.values()]
       .filter(
         (component) =>
@@ -35,6 +40,7 @@ export class PullResistorPlacementSolver extends BaseSolver {
     const id = this.resistorIds[this.currentIndex++]
     this.solved = this.currentIndex >= this.resistorIds.length
     if (!id) return
+    if (this.horizontalPushbuttonComponentIds.has(id)) return
     const index = this.index
     const resistor = index.placement(id)
     const nets = index.twoTerminalNets(id)
@@ -105,7 +111,7 @@ export class PullResistorPlacementSolver extends BaseSolver {
       wrongSideGap,
       maxRecommendedWrongSideGap:
         PullResistorPlacementSolver.MIN_WRONG_SIDE_GAP,
-      message: `consider placing ${resistor.sourceComponentName ?? id} ${preferredSide} ${host.sourceComponentName ?? signalPort.source_component_id}.${signalPort.name} so the pull-${pullDirection} branch reads toward ${pullDirection === "up" ? "power" : "ground"}`,
+      message: `consider placing ${resistor.sourceComponentName || "component"} ${preferredSide} ${host.sourceComponentName || "component"}.${signalPort.name} so the pull-${pullDirection} branch reads toward ${pullDirection === "up" ? "power" : "ground"}`,
     })
   }
 

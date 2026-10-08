@@ -1,3 +1,11 @@
+import { DiodeCapacitorStagePlacementSolver } from "./solvers/DiodeCapacitorStagePlacementSolver/DiodeCapacitorStagePlacementSolver"
+import { SeriesLedChainPlacementSolver } from "./solvers/SeriesLedChainPlacementSolver/SeriesLedChainPlacementSolver"
+import { ParallelRcPlacementSolver } from "./solvers/ParallelRcPlacementSolver/ParallelRcPlacementSolver"
+import { ChipPinResistorPlacementSolver } from "./solvers/ChipPinResistorPlacementSolver/ChipPinResistorPlacementSolver"
+import { ParallelDiodeResistorPlacementSolver } from "./solvers/ParallelDiodeResistorPlacementSolver/ParallelDiodeResistorPlacementSolver"
+import { RailPathVisibilitySolver } from "./solvers/RailPathVisibilitySolver/RailPathVisibilitySolver"
+import { ChipPinPairCapacitorPlacementSolver } from "./solvers/ChipPinPairCapacitorPlacementSolver/ChipPinPairCapacitorPlacementSolver"
+import { PiFilterPlacementSolver } from "./solvers/PiFilterPlacementSolver/PiFilterPlacementSolver"
 import { MosfetGateNetworkPlacementSolver } from "./solvers/MosfetGateNetworkPlacementSolver/MosfetGateNetworkPlacementSolver"
 import { RelayFlybackDiodePlacementSolver } from "./solvers/RelayFlybackDiodePlacementSolver/RelayFlybackDiodePlacementSolver"
 import { CurrentSenseShuntPlacementSolver } from "./solvers/CurrentSenseShuntPlacementSolver/CurrentSenseShuntPlacementSolver"
@@ -88,6 +96,8 @@ export class SchematicPlacementAnalysis {
       SchematicBoxInnerLabelCollision: 0,
       SchematicPinPaddingToEdgeTooLarge: 0,
       DiodeResistorNotAligned: 0,
+      ParallelRcNotAligned: 0,
+      ParallelDiodeResistorNotAligned: 0,
       ComponentPinsWouldAlignWithVerticalShift: 0,
       TraceCanBeSimplifiedByMovingComponent: 0,
       CrystalNotCenteredOverLoadCapacitors: 0,
@@ -108,7 +118,13 @@ export class SchematicPlacementAnalysis {
       RegulatorCapacitorsOnWrongSides: 0,
       VoltageDividerSupplyResistorBelowGroundResistor: 0,
       CurrentSenseShuntSeparatedFromInputs: 0,
+      DiodeCapacitorJunctionTooSpreadOut: 0,
+      PiFilterComponentsNotGrouped: 0,
       MosfetGateNetworkNotGrouped: 0,
+      CapacitorSeparatedFromChipPins: 0,
+      ResistorSeparatedFromChipPin: 0,
+      RailPathTooSpreadOut: 0,
+      SeriesLedChainNotOrdered: 0,
     } satisfies Record<SchematicPlacementIssue["lineItemType"], number>
     for (const issue of this.getIssues(filter)) counts[issue.lineItemType]++
     return counts
@@ -133,6 +149,16 @@ export class SchematicPlacementAnalysis {
 
   schematicIssuesToString(issue: SchematicPlacementIssue): string {
     switch (issue.lineItemType) {
+      case "SeriesLedChainNotOrdered":
+        return SeriesLedChainPlacementSolver.issueToString(issue)
+      case "ResistorSeparatedFromChipPin":
+        return ChipPinResistorPlacementSolver.issueToString(issue)
+      case "CapacitorSeparatedFromChipPins":
+        return ChipPinPairCapacitorPlacementSolver.issueToString(issue)
+      case "DiodeCapacitorJunctionTooSpreadOut":
+        return DiodeCapacitorStagePlacementSolver.issueToString(issue)
+      case "PiFilterComponentsNotGrouped":
+        return PiFilterPlacementSolver.issueToString(issue)
       case "MosfetGateNetworkNotGrouped":
         return MosfetGateNetworkPlacementSolver.issueToString(issue)
       case "CurrentSenseShuntSeparatedFromInputs":
@@ -152,6 +178,10 @@ export class SchematicPlacementAnalysis {
         return SchematicBoxInnerLabelCollisionSolver.issueToString(issue)
       case "SchematicPinPaddingToEdgeTooLarge":
         return SchematicPinPaddingToEdgeSolver.issueToString(issue)
+      case "ParallelRcNotAligned":
+        return ParallelRcPlacementSolver.issueToString(issue)
+      case "ParallelDiodeResistorNotAligned":
+        return ParallelDiodeResistorPlacementSolver.issueToString(issue)
       case "DiodeResistorNotAligned":
         return DiodeResistorAlignmentSolver.issueToString(issue)
       case "ComponentPinsWouldAlignWithVerticalShift":
@@ -167,6 +197,8 @@ export class SchematicPlacementAnalysis {
       case "TwoPinComponentShouldBeVertical":
       case "TwoPinComponentHasInvertedRails":
         return TwoPinComponentRailOrientationSolver.issueToString(issue)
+      case "RailPathTooSpreadOut":
+        return RailPathVisibilitySolver.issueToString(issue)
       case "PullResistorOnWrongSide":
         return PullResistorPlacementSolver.issueToString(issue)
       case "NetLabelCollision":

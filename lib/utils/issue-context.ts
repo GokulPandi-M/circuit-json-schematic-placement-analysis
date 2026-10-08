@@ -66,6 +66,26 @@ export const getRelevantPlacementsForIssues = ({
 
   for (const issue of issues) {
     switch (issue.lineItemType) {
+      case "SeriesLedChainNotOrdered":
+        for (const placement of issue.ledSchematicBoxes) addPlacement(placement)
+        break
+      case "ResistorSeparatedFromChipPin":
+        addPlacement(issue.hostSchematicBox)
+        addPlacement(issue.resistorSchematicBox)
+        break
+      case "CapacitorSeparatedFromChipPins":
+        addPlacement(issue.hostSchematicBox)
+        addPlacement(issue.capacitorSchematicBox)
+        break
+      case "DiodeCapacitorJunctionTooSpreadOut":
+        addPlacement(issue.capacitorSchematicBox)
+        for (const diode of issue.diodeSchematicBoxes) addPlacement(diode)
+        break
+      case "PiFilterComponentsNotGrouped":
+        addPlacement(issue.inductorSchematicBox)
+        addPlacement(issue.firstCapacitorSchematicBox)
+        addPlacement(issue.secondCapacitorSchematicBox)
+        break
       case "MosfetGateNetworkNotGrouped":
         addPlacement(issue.mosfetSchematicBox)
         addPlacement(issue.seriesGateResistorSchematicBox)
@@ -145,6 +165,11 @@ export const getRelevantPlacementsForIssues = ({
           addComponentName(getComponentNameFromPin(pin), issue.schematicSheetId)
         }
         break
+      case "ParallelRcNotAligned":
+        addPlacement(issue.resistorSchematicBox)
+        addPlacement(issue.capacitorSchematicBox)
+        break
+      case "ParallelDiodeResistorNotAligned":
       case "DiodeResistorNotAligned":
         addPlacement(issue.diodeSchematicBox)
         addPlacement(issue.resistorSchematicBox)
@@ -181,6 +206,11 @@ export const getRelevantPlacementsForIssues = ({
       case "TwoPinComponentShouldBeVertical":
       case "TwoPinComponentHasInvertedRails":
         addPlacement(issue.schematicBox)
+        break
+      case "RailPathTooSpreadOut":
+        addPlacement(issue.hostSchematicBox)
+        for (const placement of issue.supportSchematicBoxes)
+          addPlacement(placement)
         break
       case "PullResistorOnWrongSide":
         addPlacement(issue.resistorSchematicBox)
