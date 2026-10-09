@@ -14,8 +14,12 @@ export async function createCorrectedUsbHubCrystalNetwork(): Promise<CircuitJson
           pin2: "XTAL2",
           pin3: "GND",
         }}
+        schPinArrangement={{
+          leftSide: ["XTAL1", "XTAL2"],
+          bottomSide: ["GND"],
+        }}
         schX={0}
-        schY={4}
+        schY={4.5}
       />
       <crystal
         name="Y2"
