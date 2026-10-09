@@ -1,3 +1,4 @@
+export { SharedNodeDiodePlacementSolver } from "./solvers/SharedNodeDiodePlacementSolver/SharedNodeDiodePlacementSolver"
 export { DiodeCapacitorStagePlacementSolver } from "./solvers/DiodeCapacitorStagePlacementSolver/DiodeCapacitorStagePlacementSolver"
 export { ParallelRcPlacementSolver } from "./solvers/ParallelRcPlacementSolver/ParallelRcPlacementSolver"
 export { ParallelDiodeResistorPlacementSolver } from "./solvers/ParallelDiodeResistorPlacementSolver/ParallelDiodeResistorPlacementSolver"
@@ -47,3 +48,5 @@ export { RailPathVisibilitySolver } from "./solvers/RailPathVisibilitySolver/Rai
 export { ChipPinResistorPlacementSolver } from "./solvers/ChipPinResistorPlacementSolver/ChipPinResistorPlacementSolver"
 
 export { SeriesLedChainPlacementSolver } from "./solvers/SeriesLedChainPlacementSolver/SeriesLedChainPlacementSolver"
+
+export { ChipSupplyInductorPlacementSolver } from "./solvers/ChipSupplyInductorPlacementSolver/ChipSupplyInductorPlacementSolver"

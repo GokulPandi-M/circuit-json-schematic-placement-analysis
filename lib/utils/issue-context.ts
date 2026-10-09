@@ -69,6 +69,10 @@ export const getRelevantPlacementsForIssues = ({
       case "SeriesLedChainNotOrdered":
         for (const placement of issue.ledSchematicBoxes) addPlacement(placement)
         break
+      case "InductorSeparatedFromChipPin":
+        addPlacement(issue.hostSchematicBox)
+        addPlacement(issue.inductorSchematicBox)
+        break
       case "ResistorSeparatedFromChipPin":
         addPlacement(issue.hostSchematicBox)
         addPlacement(issue.resistorSchematicBox)
@@ -76,6 +80,9 @@ export const getRelevantPlacementsForIssues = ({
       case "CapacitorSeparatedFromChipPins":
         addPlacement(issue.hostSchematicBox)
         addPlacement(issue.capacitorSchematicBox)
+        break
+      case "SharedNodeDiodesInline":
+        for (const diode of issue.diodeSchematicBoxes) addPlacement(diode)
         break
       case "DiodeCapacitorJunctionTooSpreadOut":
         addPlacement(issue.capacitorSchematicBox)

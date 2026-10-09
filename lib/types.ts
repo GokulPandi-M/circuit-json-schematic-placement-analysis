@@ -556,7 +556,31 @@ export interface SeriesLedChainNotOrdered {
   message: string
 }
 
+/** A chip's private inductor branch returns to that chip through an explicit power net. */
+export interface InductorSeparatedFromChipPin {
+  lineItemType: "InductorSeparatedFromChipPin"
+  hostSchematicBox: SchematicBoxPlacement
+  inductorSchematicBox: SchematicBoxPlacement
+  chipSourcePortId: string
+  inductorSourcePortId: string
+  powerSourcePortIds: string[]
+  pinDistance: number
+  maxRecommendedPinDistance: number
+  message: string
+}
+
+/** Two diode branches sharing a power node are placed one behind the other. */
+export interface SharedNodeDiodesInline {
+  lineItemType: "SharedNodeDiodesInline"
+  diodeSchematicBoxes: [SchematicBoxPlacement, SchematicBoxPlacement]
+  sharedSourcePortIds: [string, string]
+  inlinePinSeparation: number
+  message: string
+}
+
 export type SchematicPlacementIssue =
+  | InductorSeparatedFromChipPin
+  | SharedNodeDiodesInline
   | DiodeCapacitorJunctionTooSpreadOut
   | SeriesLedChainNotOrdered
   | RailPathTooSpreadOut
