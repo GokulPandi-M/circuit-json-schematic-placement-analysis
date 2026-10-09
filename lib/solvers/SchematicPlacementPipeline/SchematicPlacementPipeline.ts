@@ -1,3 +1,4 @@
+import { ChipSupplyInductorPlacementSolver } from "../ChipSupplyInductorPlacementSolver/ChipSupplyInductorPlacementSolver"
 import { SharedNodeDiodePlacementSolver } from "../SharedNodeDiodePlacementSolver/SharedNodeDiodePlacementSolver"
 import { DiodeCapacitorStagePlacementSolver } from "../DiodeCapacitorStagePlacementSolver/DiodeCapacitorStagePlacementSolver"
 import { SeriesLedChainPlacementSolver } from "../SeriesLedChainPlacementSolver/SeriesLedChainPlacementSolver"
@@ -59,6 +60,7 @@ const solversByIssueType = {
   SeriesLedChainNotOrdered: [SeriesLedChainPlacementSolver],
   RailPathTooSpreadOut: [RailPathVisibilitySolver],
   ResistorSeparatedFromChipPin: [ChipPinResistorPlacementSolver],
+  InductorSeparatedFromChipPin: [ChipSupplyInductorPlacementSolver],
   CapacitorSeparatedFromChipPins: [ChipPinPairCapacitorPlacementSolver],
   SharedNodeDiodesInline: [SharedNodeDiodePlacementSolver],
   DiodeCapacitorJunctionTooSpreadOut: [DiodeCapacitorStagePlacementSolver],
@@ -344,6 +346,13 @@ export class SchematicPlacementPipeline extends BasePipelineSolver<CircuitJson> 
     definePipelineStep(
       "MosfetGateNetworkPlacementSolver",
       MosfetGateNetworkPlacementSolver,
+      (p: SchematicPlacementPipeline): [SolverParams] => [
+        { ctx: p.ctx, issues: p.issues },
+      ],
+    ),
+    definePipelineStep(
+      "ChipSupplyInductorPlacementSolver",
+      ChipSupplyInductorPlacementSolver,
       (p: SchematicPlacementPipeline): [SolverParams] => [
         { ctx: p.ctx, issues: p.issues },
       ],

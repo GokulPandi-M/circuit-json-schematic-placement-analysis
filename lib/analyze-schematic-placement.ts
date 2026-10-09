@@ -1,3 +1,4 @@
+import { ChipSupplyInductorPlacementSolver } from "./solvers/ChipSupplyInductorPlacementSolver/ChipSupplyInductorPlacementSolver"
 import { SharedNodeDiodePlacementSolver } from "./solvers/SharedNodeDiodePlacementSolver/SharedNodeDiodePlacementSolver"
 import { DiodeCapacitorStagePlacementSolver } from "./solvers/DiodeCapacitorStagePlacementSolver/DiodeCapacitorStagePlacementSolver"
 import { SeriesLedChainPlacementSolver } from "./solvers/SeriesLedChainPlacementSolver/SeriesLedChainPlacementSolver"
@@ -125,6 +126,7 @@ export class SchematicPlacementAnalysis {
       MosfetGateNetworkNotGrouped: 0,
       CapacitorSeparatedFromChipPins: 0,
       ResistorSeparatedFromChipPin: 0,
+      InductorSeparatedFromChipPin: 0,
       RailPathTooSpreadOut: 0,
       SeriesLedChainNotOrdered: 0,
     } satisfies Record<SchematicPlacementIssue["lineItemType"], number>
@@ -153,6 +155,8 @@ export class SchematicPlacementAnalysis {
     switch (issue.lineItemType) {
       case "SeriesLedChainNotOrdered":
         return SeriesLedChainPlacementSolver.issueToString(issue)
+      case "InductorSeparatedFromChipPin":
+        return ChipSupplyInductorPlacementSolver.issueToString(issue)
       case "ResistorSeparatedFromChipPin":
         return ChipPinResistorPlacementSolver.issueToString(issue)
       case "CapacitorSeparatedFromChipPins":
