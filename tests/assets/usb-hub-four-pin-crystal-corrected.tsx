@@ -15,7 +15,7 @@ export async function createCorrectedUsbHubCrystalNetwork(): Promise<CircuitJson
           pin3: "GND",
         }}
         schX={0}
-        schY={3}
+        schY={4}
       />
       <crystal
         name="Y2"
@@ -24,7 +24,7 @@ export async function createCorrectedUsbHubCrystalNetwork(): Promise<CircuitJson
         pinVariant="four_pin"
         footprint="pinrow4_p2.54"
         schX={0}
-        schY={0.3}
+        schY={1.2}
       />
       <capacitor
         name="C31"
@@ -47,17 +47,15 @@ export async function createCorrectedUsbHubCrystalNetwork(): Promise<CircuitJson
         resistance="1M"
         footprint="0402"
         schX={0}
-        schY={1.6}
+        schY={2.4}
       />
 
-      <trace from=".U13 > .XTAL1" to="net.XTAL1" />
-      <trace from=".Y2 > .pin1" to="net.XTAL1" />
-      <trace from=".C31 > .pin1" to="net.XTAL1" />
-      <trace from=".R33 > .pin1" to="net.XTAL1" />
-      <trace from=".U13 > .XTAL2" to="net.XTAL2" />
-      <trace from=".Y2 > .pin3" to="net.XTAL2" />
-      <trace from=".C32 > .pin1" to="net.XTAL2" />
-      <trace from=".R33 > .pin2" to="net.XTAL2" />
+      <trace from=".U13 > .XTAL1" to=".R33 > .pin1" schDisplayLabel="XTAL1" />
+      <trace from=".R33 > .pin1" to=".Y2 > .pin1" schDisplayLabel="XTAL1" />
+      <trace from=".Y2 > .pin1" to=".C31 > .pin1" schDisplayLabel="XTAL1" />
+      <trace from=".U13 > .XTAL2" to=".R33 > .pin2" schDisplayLabel="XTAL2" />
+      <trace from=".R33 > .pin2" to=".Y2 > .pin3" schDisplayLabel="XTAL2" />
+      <trace from=".Y2 > .pin3" to=".C32 > .pin1" schDisplayLabel="XTAL2" />
       <trace from=".Y2 > .pin2" to="net.GND" />
       <trace from=".Y2 > .pin4" to="net.GND" />
       <trace from=".C31 > .pin2" to="net.GND" />

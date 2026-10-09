@@ -59,9 +59,9 @@ test("records the real USB hub four-pin crystal load network", async () => {
     firstLoadCapacitorSchematicBox: { sourceComponentName: "C32" },
     secondLoadCapacitorSchematicBox: { sourceComponentName: "C31" },
     deltaSchX: -0.95,
-    deltaSchY: 0.3,
+    deltaSchY: 0,
     newSchX: 0.66,
-    newSchY: 2.5,
+    newSchY: 2.2,
   })
   expect(
     analysis.getIssues({ issueTypes: ["SchematicBoxInnerLabelCollision"] }),
