@@ -14,12 +14,8 @@ export async function createCorrectedUsbHubCrystalNetwork(): Promise<CircuitJson
           pin2: "XTAL2",
           pin3: "GND",
         }}
-        schPinArrangement={{
-          leftSide: ["XTAL1", "XTAL2"],
-          bottomSide: ["GND"],
-        }}
         schX={0}
-        schY={4.5}
+        schY={4}
       />
       <crystal
         name="Y2"
@@ -61,13 +57,39 @@ export async function createCorrectedUsbHubCrystalNetwork(): Promise<CircuitJson
       <trace from=".R33 > .pin2" to=".Y2 > .pin3" schDisplayLabel="XTAL2" />
       <trace from=".Y2 > .pin3" to=".C32 > .pin1" schDisplayLabel="XTAL2" />
       <trace from=".Y2 > .pin2" to="net.GND" />
-      <trace from=".Y2 > .pin4" to="net.GND" />
+      <trace from=".U13 > .GND" to=".Y2 > .pin4" />
       <trace from=".C31 > .pin2" to="net.GND" />
       <trace from=".C32 > .pin2" to="net.GND" />
-      <trace from=".U13 > .GND" to="net.GND" />
+      <netlabel
+        net="GND"
+        connectsTo=".U13 > .GND"
+        schX={1.4}
+        schY={1.7}
+        anchorSide="top"
+      />
     </board>,
   )
 
   await circuit.renderUntilSettled()
-  return circuit.getCircuitJson()
+  const upperGroundBend = { x: 1.4, y: 4 }
+
+  return circuit
+    .getCircuitJson()
+    .filter(
+      (element) =>
+        element.type !== "schematic_trace" ||
+        !element.source_trace_id?.startsWith("available-net-orientation-"),
+    )
+    .map((element) =>
+      element.type === "schematic_trace"
+        ? {
+            ...element,
+            junctions: element.junctions.filter(
+              (junction) =>
+                Math.abs(junction.x - upperGroundBend.x) > 1e-6 ||
+                Math.abs(junction.y - upperGroundBend.y) > 1e-6,
+            ),
+          }
+        : element,
+    )
 }
