@@ -124,34 +124,17 @@ test("resistor-connector-alignment uses topology and accepts both horizontal and
       },
     )
   })
-  for (const flag of [
-    "requires_power",
-    "provides_power",
-    "requires_ground",
-    "provides_ground",
-  ] as const)
-    reject((j) => {
-      port(j, "R_UART_TX", "pin2")[flag] = true
-    })
-  reject((j) => {
-    j.push(
-      {
-        type: "source_net",
-        source_net_id: "same-net",
-        member_source_group_ids: [],
-        name: "arbitrary",
-        is_power: true,
-      },
-      {
-        type: "source_trace",
-        source_trace_id: "rail",
-        connected_source_port_ids: [
-          port(j, "R_UART_TX", "pin2").source_port_id,
-        ],
-        connected_source_net_ids: ["same-net"],
-      },
-    )
-  })
+  for (const terminal of ["pin1", "pin2"] as const)
+    for (const flag of [
+      "requires_power",
+      "provides_power",
+      "requires_ground",
+      "provides_ground",
+    ] as const) {
+      const j = structuredClone(before)
+      port(j, "R_UART_TX", terminal)[flag] = true
+      expect(issues(j)).toHaveLength(1)
+    }
   reject((j) => {
     j.push({
       type: "source_trace",
@@ -162,13 +145,6 @@ test("resistor-connector-alignment uses topology and accepts both horizontal and
       ],
       connected_source_net_ids: [],
     })
-  })
-  // Pull-up/down resistors are outside the series-signal connection rule.
-  reject((j) => {
-    port(j, "R_UART_TX", "pin1").requires_ground = true
-  })
-  reject((j) => {
-    port(j, "R_UART_TX", "pin1").provides_power = true
   })
   const header = structuredClone(before)
   Object.assign(
@@ -242,6 +218,15 @@ test("resistor-connector-alignment uses topology and accepts both horizontal and
                 e.facing_direction === "left" ? "right" : "left"
           }
         }
+        for (const e of j)
+          if (e.type === "schematic_trace")
+            for (const edge of e.edges)
+              for (const p of [edge.from, edge.to]) {
+                for (let n = 0; n < turns; n++) [p.x, p.y] = [-p.y, p.x]
+                if (reflect) p.x = -p.x
+                p.x += 25
+                p.y -= 10
+              }
         expect(issues(j)).toHaveLength(source === before ? 1 : 0)
       }
 })

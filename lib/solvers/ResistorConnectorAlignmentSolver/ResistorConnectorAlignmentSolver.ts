@@ -2,11 +2,13 @@ import { BaseSolver } from "@tscircuit/solver-utils"
 import type { SourcePort } from "circuit-json"
 import type {
   ResistorConnectorNotAligned,
+  SchematicBoxPlacement,
   SchematicPlacementIssue,
 } from "../../types"
 import { addAttr } from "../../utils/format"
 import { PlacementNetworkIndex } from "../../utils/placement-network-index"
 import type { SolverContext } from "../SolverContext"
+import { hasVisibleSchematicConnection } from "../../utils/has-visible-schematic-connection"
 const vectors = {
   up: [0, 1],
   down: [0, -1],
@@ -55,7 +57,7 @@ export class ResistorConnectorAlignmentSolver extends BaseSolver {
     if (!net) return
     const index = this.index,
       ports = index.portsByNet.get(net)!
-    if (index.isRail(net) || ports.length !== 2) return
+    if (ports.length !== 2) return
     const rp = ports.find(
       (p) =>
         index.components.get(p.source_component_id)?.ftype ===
@@ -67,30 +69,50 @@ export class ResistorConnectorAlignmentSolver extends BaseSolver {
       ),
     )
     if (!rp || !cp) return
-    const rb = this.validPlacement(rp.source_component_id, 2)
+    const rb = this.validPlacement({ id: rp.source_component_id, pinCount: 2 })
     const peerPorts = index.portsByComponent.get(cp.source_component_id)
     if (!peerPorts?.length) return
-    const cb = this.validPlacement(cp.source_component_id, peerPorts.length)
+    const cb = this.validPlacement({
+      id: cp.source_component_id,
+      pinCount: peerPorts.length,
+      connectedPort: cp,
+    })
     const resistorNets = index.twoTerminalNets(rp.source_component_id)
     if (!rb || !cb || !index.sameLocalScope(rb, cb) || !resistorNets) return
-    // Pull-up/down resistors belong to rail placement, not a series signal path.
-    if (resistorNets.some((n) => index.isRail(n))) return
-    if (!this.isSeparated(rb, cb, rp, cp)) return
+    // A visible detour around the body is geometric, regardless of either net's role.
+    const behindConnector =
+      this.isBehindConnector({ resistor: rb, connector: cb, rp, cp }) &&
+      !this.crossesSectionDivider(cb, rb) &&
+      hasVisibleSchematicConnection(this.params.ctx.circuitJson, index, cp, rp)
+    // Preserve the existing alignment rule, including its label-only connections.
+    if (
+      !behindConnector &&
+      (resistorNets.some((n) => index.isRail(n)) ||
+        !this.isSeparated({ a: rb, b: cb, ap: rp, bp: cp }))
+    )
+      return
     this.params.issues.push({
       lineItemType: "ResistorConnectorNotAligned",
       resistorSchematicBox: rb,
       connectorSchematicBox: cb,
       resistorSourcePortId: rp.source_port_id,
       connectorSourcePortId: cp.source_port_id,
-      message: `Align ${rb.sourceComponentName || "the resistor"} with its connected terminal on ${cb.sourceComponentName || "the connector"}, facing their pins toward each other along a straight wire. Preserve connector pin order, resistor value and all connections, leave room for labels and neighboring parts, and reroute affected traces.`,
+      message: behindConnector
+        ? `Move ${rb.sourceComponentName || "the resistor"} beside its connected pin on ${cb.sourceComponentName || "the connector"} so the wire does not detour around the connector body. Preserve connector pin order, resistor value and all connections, leave room for labels and neighboring parts, and reroute affected traces.`
+        : `Align ${rb.sourceComponentName || "the resistor"} with its connected terminal on ${cb.sourceComponentName || "the connector"}, facing their pins toward each other along a straight wire. Preserve connector pin order, resistor value and all connections, leave room for labels and neighboring parts, and reroute affected traces.`,
     })
   }
-  private isSeparated(
-    a: NonNullable<ReturnType<PlacementNetworkIndex["placement"]>>,
-    b: NonNullable<ReturnType<PlacementNetworkIndex["placement"]>>,
-    ap: SourcePort & { source_component_id: string },
-    bp: SourcePort & { source_component_id: string },
-  ) {
+  private isSeparated({
+    a,
+    b,
+    ap,
+    bp,
+  }: {
+    a: NonNullable<ReturnType<PlacementNetworkIndex["placement"]>>
+    b: NonNullable<ReturnType<PlacementNetworkIndex["placement"]>>
+    ap: SourcePort & { source_component_id: string }
+    bp: SourcePort & { source_component_id: string }
+  }) {
     // Colliding bodies need collision correction first; short bends are acceptable.
     if (
       Math.abs(a.schX - b.schX) < (a.width + b.width) / 2 &&
@@ -111,7 +133,72 @@ export class ResistorConnectorAlignmentSolver extends BaseSolver {
       pv[0] * qv[0] + pv[1] * qv[1] === -1 && dx * pv[0] + dy * pv[1] > 0
     )
   }
-  private validPlacement(id: string, pinCount: number) {
+  private isBehindConnector({
+    resistor,
+    connector,
+    rp,
+    cp,
+  }: {
+    resistor: SchematicBoxPlacement
+    connector: SchematicBoxPlacement
+    rp: SourcePort & { source_component_id: string }
+    cp: SourcePort & { source_component_id: string }
+  }) {
+    const p = this.index.port(cp)!,
+      q = this.index.port(rp)!,
+      v = vectors[p.facing_direction!]
+    if (
+      Math.hypot(p.center.x - q.center.x, p.center.y - q.center.y) <=
+      Math.max(2, 2 * Math.max(resistor.width, resistor.height))
+    )
+      return false
+    const behind = -(
+      v[0] * (resistor.schX - connector.schX) +
+      v[1] * (resistor.schY - connector.schY)
+    )
+    const halfExtent = v[0]
+      ? (connector.width + resistor.width) / 2
+      : (connector.height + resistor.height) / 2
+    // The entire resistor body must be beyond the opposite connector edge.
+    return behind > halfExtent + 0.2
+  }
+
+  private crossesSectionDivider(
+    host: SchematicBoxPlacement,
+    leaf: SchematicBoxPlacement,
+  ) {
+    const dx = leaf.schX - host.schX,
+      dy = leaf.schY - host.schY
+    return this.params.ctx.circuitJson.some((line) => {
+      if (
+        line.type !== "schematic_line" ||
+        !line.is_dashed ||
+        line.schematic_component_id ||
+        line.schematic_sheet_id !== host.schematicSheetId ||
+        ![line.x1, line.y1, line.x2, line.y2].every(Number.isFinite)
+      )
+        return false
+      const sx = line.x2 - line.x1,
+        sy = line.y2 - line.y1,
+        cross = dx * sy - dy * sx
+      if (Math.abs(cross) < 1e-9) return false
+      const ox = line.x1 - host.schX,
+        oy = line.y1 - host.schY
+      const branch = (ox * sy - oy * sx) / cross,
+        divider = (ox * dy - oy * dx) / cross
+      return branch > 1e-6 && branch < 1 - 1e-6 && divider >= 0 && divider <= 1
+    })
+  }
+
+  private validPlacement({
+    id,
+    pinCount,
+    connectedPort,
+  }: {
+    id: string
+    pinCount: number
+    connectedPort?: SourcePort
+  }) {
     const box = this.index.placement(id),
       ports = this.index.portsByComponent.get(id)
     if (
@@ -121,19 +208,31 @@ export class ResistorConnectorAlignmentSolver extends BaseSolver {
       ![box.schX, box.schY, box.width, box.height].every(Number.isFinite) ||
       box.width <= 0 ||
       box.height <= 0 ||
-      ports.some((p) => !this.validPort(p, box.schematicSheetId))
+      ports.some(
+        (p) =>
+          !this.validPort({
+            port: p,
+            sheetId: box.schematicSheetId,
+            allowNoConnect: connectedPort !== undefined && p !== connectedPort,
+          }),
+      )
     )
       return
     return box
   }
 
-  private validPort(
-    p: SourcePort & { source_component_id: string },
-    sheetId?: string,
-  ) {
-    const geometry = this.index.port(p)
+  private validPort({
+    port,
+    sheetId,
+    allowNoConnect = false,
+  }: {
+    port: SourcePort & { source_component_id: string }
+    sheetId?: string
+    allowNoConnect?: boolean
+  }) {
+    const geometry = this.index.port(port)
     return (
-      !p.do_not_connect &&
+      (allowNoConnect || !port.do_not_connect) &&
       geometry &&
       geometry.schematic_sheet_id === sheetId &&
       [geometry.center.x, geometry.center.y].every(Number.isFinite) &&

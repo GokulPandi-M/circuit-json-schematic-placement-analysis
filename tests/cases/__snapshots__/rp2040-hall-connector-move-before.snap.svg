@@ -36,17 +36,17 @@
     <tspan x="18" dy="22">  currentTotalSignalDistance=&quot;64.7&quot; suggestedTotalSignalDistance=&quot;15.6&quot; message=&quot;Move J_HALL to</tspan>
     <tspan x="18" dy="22">  schX=-13.3, schY=0.2 so its signal pins face R_HALL_A_TOP, R_HALL_B_TOP, R_HALL_C_TOP.</tspan>
     <tspan x="18" dy="22">  Preserve rotation and pin assignments; reroute the connections and attached rail labels.&quot; /&gt;</tspan>
-    <tspan x="18" dy="22">&lt;ResistorConnectorNotAligned resistorName=&quot;R_HALL_A_TOP&quot; connectorName=&quot;J_HALL&quot; message=&quot;Align</tspan>
-    <tspan x="18" dy="22">  R_HALL_A_TOP with its connected terminal on J_HALL, facing their pins toward each other along</tspan>
-    <tspan x="18" dy="22">  a straight wire. Preserve connector pin order, resistor value and all connections, leave room</tspan>
+    <tspan x="18" dy="22">&lt;ResistorConnectorNotAligned resistorName=&quot;R_HALL_A_TOP&quot; connectorName=&quot;J_HALL&quot; message=&quot;Move</tspan>
+    <tspan x="18" dy="22">  R_HALL_A_TOP beside its connected pin on J_HALL so the wire does not detour around the</tspan>
+    <tspan x="18" dy="22">  connector body. Preserve connector pin order, resistor value and all connections, leave room</tspan>
     <tspan x="18" dy="22">  for labels and neighboring parts, and reroute affected traces.&quot; /&gt;</tspan>
     <tspan x="18" dy="22">&lt;ResistorConnectorNotAligned resistorName=&quot;R_HALL_B_TOP&quot; connectorName=&quot;J_HALL&quot; message=&quot;Align</tspan>
     <tspan x="18" dy="22">  R_HALL_B_TOP with its connected terminal on J_HALL, facing their pins toward each other along</tspan>
     <tspan x="18" dy="22">  a straight wire. Preserve connector pin order, resistor value and all connections, leave room</tspan>
     <tspan x="18" dy="22">  for labels and neighboring parts, and reroute affected traces.&quot; /&gt;</tspan>
-    <tspan x="18" dy="22">&lt;ResistorConnectorNotAligned resistorName=&quot;R_HALL_C_TOP&quot; connectorName=&quot;J_HALL&quot; message=&quot;Align</tspan>
-    <tspan x="18" dy="22">  R_HALL_C_TOP with its connected terminal on J_HALL, facing their pins toward each other along</tspan>
-    <tspan x="18" dy="22">  a straight wire. Preserve connector pin order, resistor value and all connections, leave room</tspan>
+    <tspan x="18" dy="22">&lt;ResistorConnectorNotAligned resistorName=&quot;R_HALL_C_TOP&quot; connectorName=&quot;J_HALL&quot; message=&quot;Move</tspan>
+    <tspan x="18" dy="22">  R_HALL_C_TOP beside its connected pin on J_HALL so the wire does not detour around the</tspan>
+    <tspan x="18" dy="22">  connector body. Preserve connector pin order, resistor value and all connections, leave room</tspan>
     <tspan x="18" dy="22">  for labels and neighboring parts, and reroute affected traces.&quot; /&gt;</tspan>
     <tspan x="18" dy="22">&lt;/SchematicPlacementIssues&gt;</tspan>
 </text>
