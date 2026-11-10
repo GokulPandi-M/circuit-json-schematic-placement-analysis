@@ -47,7 +47,7 @@ export class CapacitorOrientationSolver extends BaseSolver {
   private readonly schematicComponentById: Map<string, SchematicComponent>
   private readonly sourceComponentById: Map<string, SourceComponentWithFtype>
   private readonly capacitorPlacements: Capacitor[]
-  private readonly feedbackCapacitorIds: Set<string>
+  private readonly orientationExemptCapacitorIds: Set<string>
   private currentPlacementIndex = 0
   private readonly horizontalSymbolNames = new Set([
     "capacitor_left",
@@ -70,10 +70,11 @@ export class CapacitorOrientationSolver extends BaseSolver {
     this.sourceComponentById = this.buildSourceComponentById(ctx.circuitJson)
     this.capacitorPlacements = this.getCapacitorPlacements()
     const networks = new PlacementNetworkIndex(ctx)
-    this.feedbackCapacitorIds = new Set(
+    this.orientationExemptCapacitorIds = new Set(
       this.capacitorPlacements.flatMap((capacitor) =>
         capacitor.sourceComponentId &&
-        networks.isDirectOpAmpFeedback(capacitor.sourceComponentId)
+        (networks.isDirectOpAmpFeedback(capacitor.sourceComponentId) ||
+          networks.isLocalFloatingChipCapacitor(capacitor.sourceComponentId))
           ? [capacitor.sourceComponentId]
           : [],
       ),
@@ -207,9 +208,10 @@ export class CapacitorOrientationSolver extends BaseSolver {
     if (!this.horizontalSymbolNames.has(schematicComponent.symbol_name ?? ""))
       return
 
-    // Horizontal feedback capacitors make the output-to-input return path readable.
-    // Their distance from the amplifier is assessed by the feedback placement solver.
-    if (this.feedbackCapacitorIds.has(placement.sourceComponentId)) return
+    // Feedback and local floating chip-return capacitors need not be vertical
+    // supply shunts. Separate placement checks still assess their relationships.
+    if (this.orientationExemptCapacitorIds.has(placement.sourceComponentId))
+      return
 
     // Keep capacitors inline when both traces leave outward and at least one
     // side continues as a straight horizontal run.

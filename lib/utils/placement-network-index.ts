@@ -94,6 +94,55 @@ export class PlacementNetworkIndex {
     return this.powerNets.has(net) || this.groundNets.has(net)
   }
 
+  /** A local chip-return capacitor whose only supply evidence is one output pin.
+   * Bootstrap/flying-capacitor nodes can provide power without being DC rails.
+   * This establishes ambiguity, not a specific electrical function.
+   */
+  isLocalFloatingChipCapacitor(id: string): boolean {
+    if (this.components.get(id)?.ftype !== "simple_capacitor") return false
+    const nets = this.twoTerminalNets(id)
+    if (!nets || nets.some((net) => this.isRail(net))) return false
+    const members = nets.map((net) => this.portsByNet.get(net) ?? [])
+    if (
+      members
+        .flat()
+        .some(
+          (port) =>
+            port.provides_ground ||
+            port.requires_ground ||
+            port.provides_voltage !== undefined ||
+            port.requires_voltage !== undefined ||
+            port.do_not_connect,
+        )
+    )
+      return false
+    const supplyPorts = members.map((ports) =>
+      ports.filter((port) => port.provides_power || port.requires_power),
+    )
+    // Exactly one inferred power node; two supplies remain subject to the rule.
+    const powerIndex = supplyPorts.findIndex((ports) => ports.length > 0)
+    if (powerIndex < 0) return false
+    const otherIndex = 1 - powerIndex
+    if (supplyPorts[otherIndex]!.length > 0) return false
+    const peers = members[otherIndex]!.filter(
+      (port) => port.source_component_id !== id,
+    )
+    if (peers.length !== 1) return false
+    const hostId = peers[0]!.source_component_id
+    if (this.components.get(hostId)?.ftype !== "simple_chip") return false
+    const host = this.placement(hostId)
+    const capacitor = this.placement(id)
+    if (!host || !capacitor || !this.sameLocalScope(host, capacitor))
+      return false
+    const providers = supplyPorts[powerIndex]!
+    // Other supply sources/loads could establish a real rail. Do not exempt it.
+    return (
+      providers.length === 1 &&
+      providers[0]!.source_component_id === hostId &&
+      providers[0]!.provides_power === true
+    )
+  }
+
   /** Direct feedback may return to either input; grounded output loads do not count. */
   isDirectOpAmpFeedback(componentId: string): boolean {
     const nets = this.twoTerminalNets(componentId)
