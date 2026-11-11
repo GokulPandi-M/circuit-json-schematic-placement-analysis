@@ -67,6 +67,15 @@ export class TwoPinComponentRailOrientationSolver extends BaseSolver {
     const sourceComponent = index.components.get(id)
     const nets = index.twoTerminalNets(id)
     if (!component || !nets) return
+    // A chip's power-output declaration alone does not prove a DC rail.
+    // A capacitor returning to another non-supply pin on that same local chip
+    // can be a bootstrap/flying capacitor. Without explicit rail metadata,
+    // there is insufficient evidence to prescribe a vertical shunt layout.
+    if (
+      sourceComponent?.ftype === "simple_capacitor" &&
+      index.isLocalFloatingChipCapacitor(id)
+    )
+      return
     // An inductor between two non-ground nodes is a series-path element;
     // touching an output supply does not make it a vertical shunt branch.
     if (
