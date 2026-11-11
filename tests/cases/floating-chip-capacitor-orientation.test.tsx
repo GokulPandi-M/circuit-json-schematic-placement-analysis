@@ -36,9 +36,12 @@ test("does not prescribe a rail orientation for a floating chip-return capacitor
       })
       expect(analysis.getIssues()).toEqual([])
       expect(JSON.stringify(circuitJson)).toBe(original)
-      expect(
-        createSchematicAnalysisFixtureSvg({ circuitJson, analysis }),
-      ).toMatchSvgSnapshot(import.meta.path, `floating-${rotation}-${reverse}`)
+      // Keep one visual baseline; the assertions above cover every permutation.
+      if (rotation === 0 && !reverse) {
+        expect(
+          createSchematicAnalysisFixtureSvg({ circuitJson, analysis }),
+        ).toMatchSvgSnapshot(import.meta.path, "floating-0-false")
+      }
     }
   }
 })

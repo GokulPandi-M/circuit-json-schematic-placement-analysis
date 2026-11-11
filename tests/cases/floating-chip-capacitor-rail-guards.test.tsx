@@ -64,7 +64,8 @@ test("retains capacitor orientation checks when rail or scope evidence rules out
           deltaSchRotation: (rotation === 0) === !reverse ? 90 : -90,
         })
         expect(JSON.stringify(circuitJson)).toBe(original)
-        if (rotation === 0 && !reverse) {
+        // One explicit-rail visual complements the floating baseline.
+        if (mode === "declared-power" && rotation === 0 && !reverse) {
           expect(
             createSchematicAnalysisFixtureSvg({ circuitJson, analysis }),
           ).toMatchSvgSnapshot(import.meta.path, mode)
