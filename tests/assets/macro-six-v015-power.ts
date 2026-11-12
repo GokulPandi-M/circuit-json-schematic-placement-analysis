@@ -4,7 +4,9 @@
 import type { CircuitJson } from "circuit-json"
 
 // Preserve extra export metadata while checking every record against Circuit JSON.
-export const macroSixPowerSheet: (CircuitJson[number] & Record<string, unknown>)[] = [
+type ExportedCircuitElement = CircuitJson[number] & Record<string, unknown>
+
+export const macroSixPowerSheet: ExportedCircuitElement[] = [
   {
     type: "source_project_metadata",
     source_project_metadata_id: "source_project_metadata_0",
