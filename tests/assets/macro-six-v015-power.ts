@@ -1,9 +1,10 @@
-// Unchanged source connectivity and Power-sheet records from gokul/macro-six-usbc v0.1.15 (MIT).
+// Original source connectivity and Power-sheet geometry from gokul/macro-six-usbc v0.1.15 (MIT).
 // https://tscircuit.com/gokul/macro-six-usbc
 // Source Circuit JSON SHA256: b0e0a3ea924890fc1d7d7866d1916e92eb2fc02144e31f3cdce8bce9bec21d23
 import type { CircuitJson } from "circuit-json"
 
-// Preserve extra export metadata while checking every record against Circuit JSON.
+// Preserve export metadata; legacy box symbols explicitly set is_box_with_pins.
+// This matches their existing rendering without moving pins, bodies or traces.
 type ExportedCircuitElement = CircuitJson[number] & Record<string, unknown>
 
 export const macroSixPowerSheet: ExportedCircuitElement[] = [
@@ -5293,6 +5294,7 @@ export const macroSixPowerSheet: ExportedCircuitElement[] = [
   {
     type: "schematic_component",
     schematic_component_id: "schematic_component_0",
+    is_box_with_pins: true,
     center: {
       x: -8.75,
       y: 8.4,
@@ -5394,6 +5396,7 @@ export const macroSixPowerSheet: ExportedCircuitElement[] = [
   {
     type: "schematic_component",
     schematic_component_id: "schematic_component_3",
+    is_box_with_pins: true,
     center: {
       x: 1.75,
       y: 8.4,
@@ -5626,6 +5629,7 @@ export const macroSixPowerSheet: ExportedCircuitElement[] = [
   {
     type: "schematic_component",
     schematic_component_id: "schematic_component_14",
+    is_box_with_pins: true,
     center: {
       x: -1.75,
       y: 0,
@@ -5987,6 +5991,7 @@ export const macroSixPowerSheet: ExportedCircuitElement[] = [
   {
     type: "schematic_component",
     schematic_component_id: "schematic_component_29",
+    is_box_with_pins: true,
     center: {
       x: 8.75,
       y: -8.4,
