@@ -3,7 +3,8 @@
 // Source Circuit JSON SHA256: b0e0a3ea924890fc1d7d7866d1916e92eb2fc02144e31f3cdce8bce9bec21d23
 import type { CircuitJson } from "circuit-json"
 
-export const macroSixPowerSheet: CircuitJson = [
+// Preserve extra export metadata while checking every record against Circuit JSON.
+export const macroSixPowerSheet: (CircuitJson[number] & Record<string, unknown>)[] = [
   {
     type: "source_project_metadata",
     source_project_metadata_id: "source_project_metadata_0",
